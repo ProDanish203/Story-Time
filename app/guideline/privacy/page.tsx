@@ -72,7 +72,7 @@ export default function PrivacyPolicy() {
             </div>
           </div>
 
-          <div className="w-2/5   bg-white mx-2 p-10 mt-2 border-l-2 border-dashed border-[#E4E4E4] rounded-lg">
+          {/* <div className="w-2/5   bg-white mx-2 p-10 mt-2 border-l-2 border-dashed border-[#E4E4E4] rounded-lg">
             <p className="mb-5  font-bold text-3xl">Update Logs</p>
             <p className="text-md">April 23, 2023</p>
             <div className="p-4 "></div>
@@ -82,7 +82,7 @@ export default function PrivacyPolicy() {
               <p className="text-md font-semibold">10/19/2022</p>
               <p className="text-sm ">Notification was sent</p>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </DashboardLayout>

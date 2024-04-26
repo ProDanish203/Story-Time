@@ -98,6 +98,7 @@ export const resetPass = async ({
       response: data,
     };
   } catch (error: any) {
+    console.log(error)
     return {
       success: false,
       response: error?.response?.data?.message || "Something went wrong",

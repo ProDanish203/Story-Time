@@ -22,6 +22,7 @@ export default function AddingCategories({
 
   const [image, setImage] = useState<string>("");
   const [title, setTitle] = useState("");
+  const [color, setColor] = useState("");
   const [file, setFile] = useState<File | undefined>(undefined);
 
   const router = useRouter();
@@ -55,10 +56,12 @@ export default function AddingCategories({
     e.preventDefault();
     if (!title) return toast.error("Category name is required");
     if (!file) return toast.error("Picture is required");
+    if (!color) return toast.error("Color is required");
 
     const formData = new FormData();
     formData.append("name", title);
     formData.append("image", file);
+    formData.append("hexCode", color);
     id && formData.append("parent", id);
 
     const { success, response } = await mutateAsync(formData);
@@ -68,7 +71,7 @@ export default function AddingCategories({
   };
 
   return (
-    <div className="mx-10">
+    <div className="mx-10 h-full">
       <section className="flex justify-between mt-7 h-10  items-center">
         <h1 className="text-4xl font-bold text-[#093732]">{text}</h1>
         <Button
@@ -79,17 +82,30 @@ export default function AddingCategories({
           Save
         </Button>
       </section>
-      <div className="flex w-full">
-        <div className="bg-[#F3F3F3] flex-grow h-80 p-4 mt-10 rounded-md">
+      <div className="flex w-full h-full">
+        <div className="bg-[#F3F3F3] flex-grow h-full p-4 mt-10 rounded-md">
           <div className="grid w-full max-w-sm items-center gap-1.5">
             <Label htmlFor="Title">Title</Label>
             <Input
               type="email"
               id="Title"
-              placeholder="Placeholder"
+              placeholder="Title"
               value={title}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setTitle(e.target.value)
+              }
+            />
+          </div>
+
+          <div className="grid w-full max-w-sm items-center gap-1.5 mt-4">
+            <Label htmlFor="hexColor">Color</Label>
+            <Input
+              type="color"
+              id="hexColor"
+              placeholder="Placeholder"
+              value={color}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setColor(e.target.value)
               }
             />
           </div>

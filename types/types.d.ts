@@ -211,3 +211,4 @@ export interface ChatTypes {
     pagination: PaginationTypes;
   };
 }
+

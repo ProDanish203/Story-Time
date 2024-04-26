@@ -4,16 +4,19 @@ export const createGuideline = async ({
   type,
   content,
   title,
+  faqId
 }: {
   type: string;
   content: string;
   title: string;
+  faqId?: string
 }) => {
   try {
     const response = await api.post("/guideline", {
       type,
       content,
       title,
+      faqId
     });
 
     return {

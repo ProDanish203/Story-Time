@@ -23,7 +23,7 @@ export default function Category({ searchParams }: Params) {
   const { data, isLoading } = useQuery<CategoryData>({
     queryKey: ["categories", page, limit, search],
     queryFn: () => getCategories({ page, limit, search }),
-  });
+  }); 
 
   return (
     <DashboardLayout active={2}>

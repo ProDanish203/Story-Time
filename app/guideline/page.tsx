@@ -41,7 +41,7 @@ export default function GuidelinePage() {
     if (!success) return toast.error(response);
     toast.success("Content updated");
   };
-
+  console.log(data?.response)
   return (
     <DashboardLayout active={5}>
       <div className="px-10 pb-10">
@@ -74,7 +74,7 @@ export default function GuidelinePage() {
             </div>
           </div>
 
-          <div className="w-2/5   bg-white mx-2 p-10 mt-2 border-l-2 border-dashed border-[#E4E4E4] rounded-lg">
+          {/* <div className="w-2/5   bg-white mx-2 p-10 mt-2 border-l-2 border-dashed border-[#E4E4E4] rounded-lg">
             <p className="mb-5  font-bold text-3xl">Update Logs</p>
             <p className="text-md">April 23, 2023</p>
             <div className="p-4 "></div>
@@ -84,7 +84,7 @@ export default function GuidelinePage() {
               <p className="text-md font-semibold">10/19/2022</p>
               <p className="text-sm ">Notification was sent</p>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </DashboardLayout>

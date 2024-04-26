@@ -2,7 +2,6 @@
 import AuthLayout from "../../layouts/AuthLayout";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import AuthButton from "@/components/ui/AuthButton/AuthButton";
 import { ForgetFields } from "@/types/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -22,17 +21,16 @@ const ForgetPassword = () => {
   } = useForm<ForgetFields>({ resolver: zodResolver(ForgetSchema) });
 
   const router = useRouter();
-
+  
   const { mutateAsync, isPending } = useMutation({
     mutationFn: forgetPass,
   });
 
   const onSubmit: SubmitHandler<ForgetFields> = async (data) => {
     console.log(data);
-    // const { success, response } = await mutateAsync(data.email);
-    // if (!success) return toast.error(response);
-    // console.log(response);
-    // router.push("/dashboard");
+    const { success, response } = await mutateAsync(data.email);
+    if (!success) return toast.error(response);
+    else toast.success("An Email has been sent");
   };
 
   return (

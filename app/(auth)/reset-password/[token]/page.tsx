@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import AuthLayout from "../../layouts/AuthLayout";
+import AuthLayout from "../../../layouts/AuthLayout";
 import AuthButton from "@/components/ui/AuthButton/AuthButton";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { ResetPasswordSchema } from "@/lib/AuthValidation";
@@ -10,11 +10,14 @@ import { ResetPassword } from "@/types/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import ErrorMessage from "@/components/ErrorMessage";
 import { useMutation } from "@tanstack/react-query";
-import { resetPass } from "@/API/auth.api";
+import { resetPass, verifyResetToken } from "@/API/auth.api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export default function Home() {
+export default function Home({ params }: { params: { token: string } }) {
+  const { token } = params;
+  console.log(token);
   const {
     register,
     handleSubmit,
@@ -23,19 +26,42 @@ export default function Home() {
 
   const router = useRouter();
 
+  const { mutateAsync: mutateVerify, isPending: isVerifying } = useMutation({
+    mutationFn: verifyResetToken,
+  });
+
   const { mutateAsync, isPending } = useMutation({
     mutationFn: resetPass,
   });
 
+  const savedToken =
+    typeof window !== "undefined" ? localStorage.getItem("reset-token") : null;
+
+  const verifyToken = async () => {
+    const { success, response } = await mutateVerify(token);
+    if (!success) {
+      toast.error(response);
+      router.push("/forget-password");
+    } else {
+      localStorage.setItem("reset-token", token);
+    }
+    console.log(response);
+  };
+
+  useEffect(() => {
+    if (!savedToken) verifyToken();
+  }, []);
+
   const onSubmit: SubmitHandler<ResetPassword> = async (data) => {
-    console.log(data);
-    // const { success, response } = await mutateAsync({
-    //   newPassword: data.password,
-    //   confirmPassword: data.confirmPassword,
-    // });
-    // if (!success) return toast.error(response);
-    // console.log(response);
-    // router.push("/dashboard");
+    const { success, response } = await mutateAsync({
+      newPassword: data.password,
+      confirmPassword: data.confirmPassword,
+    });
+    if (!success) return toast.error(response);
+    else {
+      console.log(response);
+      router.push("/login");
+    }
   };
   return (
     <>

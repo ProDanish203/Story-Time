@@ -2,7 +2,7 @@ import api from "./middleware";
 
 export const sendMessage = async (formData: FormData) => {
   try {
-    console.log(formData)
+    console.log(formData);
     const response = await api.post("/support/send-message", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -30,7 +30,7 @@ export const getChatsList = async ({
 }) => {
   try {
     const { data } = await api.get(
-      `/support/chat-list?page=${page || 1}&limit=${limit || 10}`
+      `/support/chat-list?page=${page || 1}&limit=${limit || 1000}`
     );
     return {
       success: true,
@@ -69,7 +69,7 @@ export const getChatMessages = async ({
   }
 };
 
-export const closeTicket = async ({ id }: { id: string }) => {
+export const closeTicket = async (id: string) => {
   try {
     const { data } = await api.put(`/support/close-ticket`, {
       chat: id,
@@ -84,4 +84,14 @@ export const closeTicket = async ({ id }: { id: string }) => {
       response: error?.response?.data?.message || "Something went wrong",
     };
   }
+};
+
+export const sendMedia = async (media: any) => {
+  let formData = new FormData();
+  formData.append("media", media);
+  return api.post("/media/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 };

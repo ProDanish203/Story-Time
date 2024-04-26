@@ -5,21 +5,23 @@ import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Paperclip, Search, SendHorizontal } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getChatMessages, getChatsList, sendMessage } from "@/API/chats.api";
 import {
-  ChatListType,
-  ChatMessage,
-  ChatTypes,
-  ChatsListType,
-  SupportChatOverview,
-} from "@/types/types";
+  closeTicket,
+  getChatMessages,
+  getChatsList,
+  sendMessage,
+} from "@/API/chats.api";
+import { ChatTypes, ChatsListType, SupportChatOverview } from "@/types/types";
 import { dateFormat } from "@/lib/dateFormat";
 import { ChatListSkeleton } from "@/components/skeletons/ChatListSkeleton";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChatMessageSkeleton } from "@/components/skeletons/ChatMessageSkeleton";
 import { toast } from "sonner";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import socketServcies from "@/lib/socket";
+import { useAuth } from "@/store/AuthProvider";
+import { Chat } from "@/types/chats";
 
 interface Params {
   searchParams: {
@@ -27,14 +29,39 @@ interface Params {
     limit: number;
     chatId: string;
     userId: string;
+    username: string;
   };
 }
 
 export default function Support({ searchParams }: Params) {
   const queryClient = useQueryClient();
-  const { page, limit, chatId, userId } = searchParams;
+  const { user } = useAuth();
+  const { page, limit, chatId, userId, username } = searchParams;
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | undefined>();
+
+  const router = useRouter();
+
+  const accessToken =
+    typeof window !== "undefined" ? localStorage.getItem("session") : null;
+
+  useEffect(() => {
+    // @ts-ignore
+    socketServcies.initializeSocket(accessToken);
+    const reqData = {
+      userId: user?._id,
+      chatSupport: true,
+      page: 1,
+    };
+    socketServcies.emit("getChats", reqData);
+    socketServcies.on(`getChats/${user?._id}`, (data: any) => {
+      console.log(data);
+    });
+
+    return () => {
+      socketServcies.disconnect();
+    };
+  }, [accessToken, user]);
 
   // Fetching all chats
   const { data, isLoading } = useQuery<ChatsListType>({
@@ -71,13 +98,30 @@ export default function Support({ searchParams }: Params) {
     setFile(undefined);
   };
 
+  // Close ticket
+  const { mutateAsync: mutateCloseTicket, isPending: isClosing } = useMutation({
+    mutationFn: closeTicket,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chat", "chats-list"] });
+    },
+  });
+  const handleCloseTicket = async () => {
+    if (!chat || (chat && !chat.success) || !chat.response) return;
+    if (isClosing) return;
+
+    // const { success, response } = await mutateCloseTicket();
+    // if (!success) return toast.error(response);
+    router.push("/support");
+  };
+
+  console.log(chat?.response.supportMessages[0]);
   return (
     <DashboardLayout active={4}>
       <section className="px-10 mb-20">
         <h1 className="text-4xl text-primaryCol font-bold">Support</h1>
 
-        <div className=" border-2 border-borderCol mt-10 h-[800px] flex">
-          <div className="max-w-xs w-full flex flex-col border-2 border-borderCol h-[800px] overflow-y-auto">
+        <div className="border-2 border-borderCol mt-10 h-[800px] flex">
+          <div className="max-w-xs w-full flex flex-col border-2 border-borderCol h-[800px] overflow-y-auto overflow-x-hidden">
             <div className="relative border-b-2 border-borderCol">
               <Input
                 placeholder="Search here"
@@ -110,11 +154,14 @@ export default function Support({ searchParams }: Params) {
                     />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col gap-1">
-                    <p className="font-bold text-md">
-                      {/* {chat.user.firstName} {chat.user.lastName} */}
+                  <div className="flex flex-col pl-2">
+                    <p className="font-bold text-md">{username}</p>
+                    <p
+                      className="text-sm cursor-pointer"
+                      onClick={handleCloseTicket}
+                    >
+                      Mark as Completed
                     </p>
-                    {/* <p className="text-xs">{chat.user.}</p> */}
                   </div>
                 </div>
                 <div className="flex flex-col justify-between w-full">
@@ -129,15 +176,19 @@ export default function Support({ searchParams }: Params) {
                           <ChatMessageSkeleton />
                         ) : (
                           chat.response.supportMessages.length > 0 &&
-                          chat.response.supportMessages.map((msg) => (
-                            <MessageBox
-                              key={msg._id}
-                              id={msg._id}
-                              content={msg.text}
-                              media={msg.media}
-                              role={msg.user?._id === userId ? "user" : "admin"}
-                            />
-                          ))
+                          chat.response.supportMessages
+                            .reverse()
+                            .map((msg) => (
+                              <MessageBox
+                                key={msg._id}
+                                id={msg._id}
+                                content={msg.text}
+                                media={msg.media}
+                                role={
+                                  msg.user?._id === userId ? "user" : "admin"
+                                }
+                              />
+                            ))
                         )}
                       </div>
                     </div>
@@ -247,7 +298,11 @@ function UserMessageList({ chat }: { chat: SupportChatOverview }) {
   const router = useRouter();
   const pathname = usePathname();
   const openChat = () => {
-    router.push(`${pathname}?chatId=${chat._id}&userId=${chat.user._id}`);
+    router.push(
+      `${pathname}?chatId=${chat._id}&userId=${chat.user._id}&username=${
+        chat.user.firstName + " " + chat.user.lastName
+      }`
+    );
   };
 
   return (
