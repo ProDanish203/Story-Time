@@ -10,8 +10,7 @@ import ErrorMessage from "@/components/ErrorMessage";
 import { useMutation } from "@tanstack/react-query";
 import { forgetPass } from "@/API/auth.api";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import AuthButton from "@/components/ui/AuthButton/AuthButton";
 
 const ForgetPassword = () => {
   const {
@@ -20,8 +19,6 @@ const ForgetPassword = () => {
     formState: { errors, isSubmitting },
   } = useForm<ForgetFields>({ resolver: zodResolver(ForgetSchema) });
 
-  const router = useRouter();
-  
   const { mutateAsync, isPending } = useMutation({
     mutationFn: forgetPass,
   });
@@ -52,17 +49,11 @@ const ForgetPassword = () => {
         {errors?.email?.message && (
           <ErrorMessage text={errors?.email?.message} />
         )}
-        {/* <AuthButton
+        <AuthButton
           buttonTitle={"Reset Password"}
           isModal={!errors?.email?.message}
-        /> */}
-        <Button
-          className="mt-7 py-7 text-white bg-primaryCol rounded-md text-md w-full hover:bg-[#395e66be]"
-          type="submit"
-          disabled={isPending}
-        >
-          Reset Password
-        </Button>
+          disable={isPending}
+        />
       </form>
     </AuthLayout>
   );

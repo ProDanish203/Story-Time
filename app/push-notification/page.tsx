@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import DashboardLayout from "../layouts/Dashboard";
 import PushInfomation from "@/components/PushInfomation";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import Editor from "@/components/Editor";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getNotifications, pushNotification } from "@/API/notiifications";
-import { dateFormat } from "@/lib/dateFormat";
+import { dateFormatMM } from "@/lib/dateFormat";
 import { NotificationType } from "@/types/types";
 
 export default function NotificationPage() {
@@ -40,6 +40,9 @@ export default function NotificationPage() {
     });
     if (!success) return toast.error(response);
     toast.success("Notification sent");
+    setTitle("");
+    setValue("");
+    setDate(undefined);
   };
 
   return (
@@ -50,7 +53,7 @@ export default function NotificationPage() {
         </h1>
       </div>
       <div className="flex border-[#E4E4E4] rounded-lg border-2 m-5 mt-0">
-        <div className="mt-2 w-full ml-2 rounded-lg   flex-col border-[#E4E4E4] border">
+        <div className="mt-2 w-full ml-2 rounded-lg flex-col border-[#E4E4E4] border">
           <div className="bg-white  pb-6 rounded-md ">
             <PushInfomation
               date={date}
@@ -62,7 +65,7 @@ export default function NotificationPage() {
             />
           </div>
 
-          <div className="p-5 bg-white  ">
+          <div className="p-5 bg-white">
             <div className="min-h-[530px]  border-2 border-[#E4E4E4]">
               <Editor value={value} setValue={setValue} />
             </div>
@@ -79,7 +82,7 @@ export default function NotificationPage() {
           </div>
         </div>
 
-        <div className="w-2/5 h-screen  bg-white mx-2 p-10 mt-2 border-2 border-[#E4E4E4] rounded-lg">
+        <div className="w-2/6 h-screen  bg-white mx-2 p-10 mt-2 border-2 border-[#E4E4E4] rounded-lg">
           <p className="mb-5 text-lg font-semibold">History</p>
           <div className="flex flex-col space-y-4 border-l-2 border-dashed p-3">
             {isLoading ? (
@@ -91,8 +94,10 @@ export default function NotificationPage() {
               data.response.notifications.length > 0 &&
               data.response.notifications.map((notif) => (
                 <div key={notif._id} className="flex items-center gap-4 px-3">
-                  <p className="text-xs">{dateFormat(notif.createdAt)}</p>
-                  <p className="text-xs text-subTitleSecondaryColor">
+                  <p className="text-xs text-[#bebebe]">
+                    {dateFormatMM(notif.createdAt)}
+                  </p>
+                  <p className="text-sm text-[#979797] truncate">
                     {notif.title}
                   </p>
                 </div>

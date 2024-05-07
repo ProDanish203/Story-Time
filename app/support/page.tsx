@@ -3,7 +3,7 @@ import DashboardLayout from "../layouts/Dashboard";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Paperclip, Search, SendHorizontal } from "lucide-react";
+import { Paperclip, SendHorizontal } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   closeTicket,
@@ -12,7 +12,7 @@ import {
   sendMessage,
 } from "@/API/chats.api";
 import { ChatTypes, ChatsListType, SupportChatOverview } from "@/types/types";
-import { dateFormat } from "@/lib/dateFormat";
+import { dateFormat, dateFormatMM } from "@/lib/dateFormat";
 import { ChatListSkeleton } from "@/components/skeletons/ChatListSkeleton";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,13 @@ import { toast } from "sonner";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import socketServcies from "@/lib/socket";
 import { useAuth } from "@/store/AuthProvider";
-import { Chat } from "@/types/chats";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChatSearch } from "@/components/helpers/ChatSearch";
 
 interface Params {
   searchParams: {
@@ -30,13 +36,14 @@ interface Params {
     chatId: string;
     userId: string;
     username: string;
+    search: string;
   };
 }
 
 export default function Support({ searchParams }: Params) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { page, limit, chatId, userId, username } = searchParams;
+  const { page, limit, chatId, userId, username, search } = searchParams;
   const [text, setText] = useState("");
   const [file, setFile] = useState<File | undefined>();
 
@@ -53,8 +60,9 @@ export default function Support({ searchParams }: Params) {
       chatSupport: true,
       page: 1,
     };
-    socketServcies.emit("getChats", reqData);
-    socketServcies.on(`getChats/${user?._id}`, (data: any) => {
+    socketServcies.emit("user-connected", reqData);
+    socketServcies.on(`user-connected`, (data: any) => {
+      console.log("user-connected");
       console.log(data);
     });
 
@@ -65,8 +73,8 @@ export default function Support({ searchParams }: Params) {
 
   // Fetching all chats
   const { data, isLoading } = useQuery<ChatsListType>({
-    queryKey: ["chats-list"],
-    queryFn: () => getChatsList({ page, limit }),
+    queryKey: ["chats-list", page, limit, search],
+    queryFn: () => getChatsList({ page, limit, search }),
   });
 
   // Fetching single chats
@@ -92,8 +100,15 @@ export default function Support({ searchParams }: Params) {
     formData.append("chat", chatId);
     file && formData.append("media", file);
 
-    const { success, response } = await mutateAsync(formData);
-    if (!success) return toast.error(response);
+    const messageData = {
+      text: text,
+      chatId: chatId,
+      media: file ? file : null,
+    };
+
+    socketServcies.emit(`support-${chatId}`, messageData);
+    // const { success, response } = await mutateAsync(formData);
+    // if (!success) return toast.error(response);
     setText("");
     setFile(undefined);
   };
@@ -105,16 +120,20 @@ export default function Support({ searchParams }: Params) {
       queryClient.invalidateQueries({ queryKey: ["chat", "chats-list"] });
     },
   });
+
   const handleCloseTicket = async () => {
     if (!chat || (chat && !chat.success) || !chat.response) return;
     if (isClosing) return;
 
-    // const { success, response } = await mutateCloseTicket();
-    // if (!success) return toast.error(response);
+    const { success, response } = await mutateCloseTicket(chatId);
+    if (!success) return toast.error(response);
+
+    socketServcies.emit(`close-ticket-${chatId}`);
+    // console.log(response);
+    toast.success("Ticket closed");
     router.push("/support");
   };
 
-  console.log(chat?.response.supportMessages[0]);
   return (
     <DashboardLayout active={4}>
       <section className="px-10 mb-20">
@@ -122,13 +141,7 @@ export default function Support({ searchParams }: Params) {
 
         <div className="border-2 border-borderCol mt-10 h-[800px] flex">
           <div className="max-w-xs w-full flex flex-col border-2 border-borderCol h-[800px] overflow-y-auto overflow-x-hidden">
-            <div className="relative border-b-2 border-borderCol">
-              <Input
-                placeholder="Search here"
-                className="px-16 mt-2 border-none placeholder:text-lg placeholder:opacity-30"
-              />
-              <Search className="size-5 text-primaryCol absolute top-5 left-7" />
-            </div>
+            <ChatSearch />
             {isLoading ? (
               <ChatListSkeleton />
             ) : (
@@ -145,56 +158,62 @@ export default function Support({ searchParams }: Params) {
           <div className="border-2 border-b w-full">
             {chatId && chat && chat.success && chat.response && (
               <>
-                <div className="p-5 flex gap-1 w-full border-b">
-                  <Avatar>
-                    <AvatarImage
-                      src="/assets/dummy-user.webp"
-                      alt="@shadcn"
-                      sizes="30"
-                    />
-                    <AvatarFallback>CN</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col pl-2">
-                    <p className="font-bold text-md">{username}</p>
-                    <p
-                      className="text-sm cursor-pointer"
-                      onClick={handleCloseTicket}
-                    >
-                      Mark as Completed
-                    </p>
+                <div className="flex items-center gap-x-2 justify-between w-full border-b">
+                  <div className="p-5 flex gap-1 w-full">
+                    <Avatar>
+                      <AvatarImage
+                        src="/assets/dummy-user.webp"
+                        alt="@shadcn"
+                        sizes="30"
+                      />
+                      <AvatarFallback>CN</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col pl-2">
+                      <p className="font-bold text-md">{username}</p>
+                      <p className="text-sm cursor-pointer">#{chatId}</p>
+                    </div>
                   </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="mr-4 max-w-[120px] w-full text-sm cursor-pointer border rounded-md py-3 px-3 flex items-center gap-x-2 justify-between">
+                      Mark as
+                      <div className="w-0 h-0 border-l-transparent border-r-transparent border-b-transparent border-t-neutral-400 border-t-[10px] border-r-neutral-300 border-l-[8px] border-r-[8px]" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={handleCloseTicket}>
+                        Complete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <div className="flex flex-col justify-between w-full">
                   <div className="flex flex-col w-full">
-                    <div className="flex-grow p-4 w-full border-gray-300 max-h-[650px] min-h-[650px] overflow-y-auto">
+                    <div className="flex-grow p-4 w-full border-gray-300 h-[630px] overflow-y-auto">
                       {/* Admin Messages on the left */}
                       <p className="flex justify-center text-xs mb-5">
-                        8:00 AM
+                        {dateFormatMM(
+                          chat.response.supportMessages[0].createdAt
+                        )}
                       </p>
                       <div className="flex flex-col justify-start gap-y-1">
                         {isChatLoading ? (
                           <ChatMessageSkeleton />
                         ) : (
                           chat.response.supportMessages.length > 0 &&
-                          chat.response.supportMessages
-                            .reverse()
-                            .map((msg) => (
-                              <MessageBox
-                                key={msg._id}
-                                id={msg._id}
-                                content={msg.text}
-                                media={msg.media}
-                                role={
-                                  msg.user?._id === userId ? "user" : "admin"
-                                }
-                              />
-                            ))
+                          chat.response.supportMessages.map((msg) => (
+                            <MessageBox
+                              key={msg._id}
+                              id={msg._id}
+                              content={msg.text}
+                              media={msg.media}
+                              role={msg.user?._id === userId ? "user" : "admin"}
+                            />
+                          ))
                         )}
                       </div>
                     </div>
 
                     {/* Admin Input Field at the bottom */}
-                    <div className="w-full p-2">
+                    <div className="w-full p-2 pb-5">
                       <form
                         onSubmit={handleSendMessage}
                         className="flex items-center gap-2 relative"
@@ -237,7 +256,7 @@ export default function Support({ searchParams }: Params) {
                           type="submit"
                           className="size-14 bg-primaryCol hover:bg-primaryCol rounded-full"
                         >
-                          <SendHorizontal className="size-10 text-white" />
+                          <SendHorizontal className="size-12 text-white" />
                         </Button>
                       </form>
                     </div>
@@ -320,7 +339,9 @@ function UserMessageList({ chat }: { chat: SupportChatOverview }) {
             {chat.user.firstName} {chat.user.lastName}
           </p>
           <div className="flex items-end justify-between w-full">
-            <p className="text-xs font-semibold">{chat.lastMessage.text}</p>
+            <p className="text-xs font-semibold line-clamp-2">
+              {chat.lastMessage.text}
+            </p>
             <p className="text-xs mr-5">
               {dateFormat(chat.updatedAt || chat.createdAt)}
             </p>

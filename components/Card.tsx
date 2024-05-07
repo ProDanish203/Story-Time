@@ -30,7 +30,7 @@ export const Card: FC<card> = ({ image, status, title, navigation, id }) => {
           onClick={() => setOpen(!open)}
         />
       </div>
-      {open ? <DeleteCategories id={id} setOpen={setOpen} /> : null}
+      {open ? <DeleteCategories id={id} setOpen={setOpen} open={open}/> : null}
       <div className="flex flex-col justify-between items-center">
         <div className={navigation ? "cursor-pointer" : ""} onClick={navigate}>
           <Image

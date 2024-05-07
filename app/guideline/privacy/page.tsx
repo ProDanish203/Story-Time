@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import DashboardLayout from "../../layouts/Dashboard";
 import Link from "next/link";
 import Editor from "@/components/Editor";
@@ -8,9 +8,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createGuideline, getGuideline } from "@/API/guideline.api";
 import { toast } from "sonner";
 import { GuidelinesData } from "@/types/types";
+import { LogCard } from "../page";
+import { dateFormatMM } from "@/lib/dateFormat";
 
 export default function PrivacyPolicy() {
-
   const queryClient = useQueryClient();
   const [value, setValue] = useState("");
 
@@ -29,7 +30,8 @@ export default function PrivacyPolicy() {
   // Creating/updating content
   const { mutateAsync, isPending } = useMutation({
     mutationFn: createGuideline,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["privacy-poilcy"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["privacy-poilcy"] }),
   });
 
   const handleSubmit = async () => {
@@ -55,8 +57,9 @@ export default function PrivacyPolicy() {
           <h4 className="opacity-80">
             <Link href={"/guideline/faqs"}>FAQs</Link>
           </h4>
-          <h4 className="font-bold  border-b-4 border-[#093732]">Privacy Policy</h4>
-
+          <h4 className="font-bold  border-b-4 border-[#093732]">
+            Privacy Policy
+          </h4>
         </div>
         <div className="flex gap-4">
           <div className="w-3/4">
@@ -72,17 +75,26 @@ export default function PrivacyPolicy() {
             </div>
           </div>
 
-          {/* <div className="w-2/5   bg-white mx-2 p-10 mt-2 border-l-2 border-dashed border-[#E4E4E4] rounded-lg">
+          <div className="w-2/5  bg-white mx-2 p-10 mt-2 border-l-2 border-dashed border-[#E4E4E4] rounded-lg">
             <p className="mb-5  font-bold text-3xl">Update Logs</p>
             <p className="text-md">April 23, 2023</p>
-            <div className="p-4 "></div>
-            <div className="flex flex-col space-y-2  p-3">
-              <p className="text-md font-semibold ">10/19/2022</p>
-              <p className="text-sm ">Notification was sent</p>
-              <p className="text-md font-semibold">10/19/2022</p>
-              <p className="text-sm ">Notification was sent</p>
-            </div>
-          </div> */}
+            <div className="p-4"></div>
+            {data && data.success && data.response && (
+              <>
+                <LogCard
+                  title="Policy created"
+                  date={dateFormatMM(data.response.guidelines[0].createdAt)}
+                />
+                {data.response.guidelines[0].updatedAt && (
+                  <LogCard
+                    title="Policy updated"
+                    date={dateFormatMM(data.response.guidelines[0].updatedAt)}
+                    hideBar
+                  />
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </DashboardLayout>

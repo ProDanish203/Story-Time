@@ -63,7 +63,7 @@ export default function PushInfomation({
             <Input
               type="text"
               placeholder="Title here"
-              className="h-16 rounded-lg bg-InputFieldColor pt-7 text-gray-400 bg-[#EFEFEF]"
+              className="h-16 rounded-lg bg-InputFieldColor pt-7 text-gray-500"
               value={title}
               onChange={(e: ChangeEvent<HTMLInputElement>) =>
                 setTitle(e.target.value)

@@ -28,3 +28,18 @@ export const getUsers = async ({
     };
   }
 };
+
+export const toggleUserStatus = async (id: string) => {
+  try {
+    const { data } = await api.put(`/user/update-status?userId=${id}`);
+    return {
+      success: true,
+      response: data,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      response: error?.response?.data?.message || "Something went wrong",
+    };
+  }
+};

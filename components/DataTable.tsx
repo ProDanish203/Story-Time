@@ -12,12 +12,23 @@ import {
 import { AvatarFallback, AvatarImage, Avatar } from "./ui/avatar";
 import Image from "next/image";
 import { DashboardUser } from "@/types/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toggleUserStatus } from "@/API/dashboard.api";
+import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface DataTableProps {
   TableHeading: string[];
   TableData: DashboardUser[];
 }
 export const DataTable: FC<DataTableProps> = ({ TableData, TableHeading }) => {
+  const queryClient = useQueryClient();
+
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
 
@@ -38,13 +49,26 @@ export const DataTable: FC<DataTableProps> = ({ TableData, TableHeading }) => {
       setSelectedRows(updatedSelectedRows);
     }
   };
+  // Send message
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: toggleUserStatus,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+
+  const handleUserStatus = async (id: string) => {
+    const { success, response } = await mutateAsync(id);
+    if (!success) return toast.error(response);
+    toast.success("User status updated");
+  };
 
   return (
     <div>
       <Table className="mt-3">
         <TableHeader>
           <TableRow className="bg-[#395E66]  hover:bg-[#395e66e2] w-full rounded-sm h-5">
-            <TableHead className="   w-96">
+            <TableHead className="w-96">
               <div className="flex items-center gap-6">
                 <input
                   type="checkbox"
@@ -117,13 +141,52 @@ export const DataTable: FC<DataTableProps> = ({ TableData, TableHeading }) => {
                 </p>
               </TableCell>
               <TableCell>
-                <Image
-                  src={"/assets/More.png"}
-                  alt="Icon"
-                  width={6}
-                  height={10}
-                  className="cursor-pointer"
-                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <Image
+                      src={"/assets/More.png"}
+                      alt="Icon"
+                      width={6}
+                      height={10}
+                      className="cursor-pointer"
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {row.isActive ? (
+                      <DropdownMenuItem
+                        onClick={() => handleUserStatus(row._id)}
+                        className="flex items-center gap-x-2"
+                      >
+                        <div className="center bg-[#FEAC71] rounded-full px-1.5 py-1">
+                          <Image
+                            src={"/assets/disable.png"}
+                            alt="Icon"
+                            width={5}
+                            height={5}
+                            className="size-4"
+                          />
+                        </div>
+                        <p>Disable User</p>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        onClick={() => handleUserStatus(row._id)}
+                        className="flex items-center gap-x-2"
+                      >
+                        <div className="center bg-[#30D572] rounded-full px-1.5 py-1">
+                          <Image
+                            src={"/assets/lock.png"}
+                            alt="Icon"
+                            width={5}
+                            height={5}
+                            className="size-4"
+                          />
+                        </div>
+                        <p>Enable User</p>
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}

@@ -100,7 +100,7 @@ export default function Dashboard({ searchParams }: Params) {
             </section>
           </div>
           <div className="flex justify-between px-10 mt-5 my-2">
-            <SearchBar initialValue={search || ""}/>
+            <SearchBar initialValue={search || ""} />
             <div>
               <Button
                 variant={"outline"}

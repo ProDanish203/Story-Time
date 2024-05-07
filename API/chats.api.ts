@@ -24,13 +24,17 @@ export const sendMessage = async (formData: FormData) => {
 export const getChatsList = async ({
   page,
   limit,
+  search,
 }: {
   page: number;
   limit: number;
+  search: string;
 }) => {
   try {
     const { data } = await api.get(
-      `/support/chat-list?page=${page || 1}&limit=${limit || 1000}`
+      `/support/chat-list?page=${page || 1}&limit=${limit || 1000}&search=${
+        search || ""
+      }`
     );
     return {
       success: true,
