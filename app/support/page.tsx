@@ -106,9 +106,10 @@ export default function Support({ searchParams }: Params) {
       media: file ? file : null,
     };
 
+    const { success, response } = await mutateAsync(formData);
+    if (!success) return toast.error(response);
+    console.log(`support-${chatId}`);
     socketServcies.emit(`support-${chatId}`, messageData);
-    // const { success, response } = await mutateAsync(formData);
-    // if (!success) return toast.error(response);
     setText("");
     setFile(undefined);
   };

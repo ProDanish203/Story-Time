@@ -2,7 +2,6 @@ import api from "./middleware";
 
 export const sendMessage = async (formData: FormData) => {
   try {
-    console.log(formData);
     const response = await api.post("/support/send-message", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
